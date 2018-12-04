@@ -28,6 +28,7 @@ sqlite2数据库以文件形式存在，使用`sqlite3 databasename`就能创建
 常用的命令如下表  
 
 |命令|作用|  
+|-----|-----|
 |.database|查看数据库|  
 |.table或者.tables tablename|查看数据表|  
 |inser into tablename value('v1', v2)|向数据表中插入数据|  
