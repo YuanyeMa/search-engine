@@ -6,14 +6,38 @@
 搜索引擎主要由三部分组成：网络爬虫，信息整理，查询系统  
 其中，网络爬虫主要负责从Internet上搜索下载网页；信息整理系统负责，解析网页，提取URL并将存储解析结果，建立索引；查询系统重要完成解析用户提交的查询请求，并从信息库中搜索相关相信，并将搜索到的网页排序，最终返回给用户。
 
-## 网络爬虫
+## 网络爬虫  
+
+网络爬虫主要使用requests包完成  [参考](http://docs.python-requests.org/zh_CN/latest/user/quickstart.html)  
+
+```python
+import  requests
+r = requests.get('https://blog.csdn.net')
+r.text # 存储网页内容
+ｒ.encoding　#存储网页编码方式
+```
 
 ## 建立索引
 
 采用BeautifulSoup进行网页内容解析  
+采用jieba进行分词
 采用sqlite3数据库存储词表 
 
-### Beautiful解析网页内容  
+### BeautifulSoup解析网页内容  
+
+[参考](https://www.crummy.com/software/BeautifulSoup/bs4/doc/index.zh.html) [或者](https://cuiqingcai.com/1319.html)  
+
+### jieba分词
+
+[参考](https://github.com/fxsjy/jieba)
+
+安装：可以用pip安装也可以下载源码包，解压后执行`python3 setup.py install`安装  
+
+```python
+import jieba
+seg_list = jieba.cut_for_search(text)
+print(' '.join(seg_list))
+```
 
 ### SQLite3数据库使用  
 1. 在ubuntu中安装sqlite3数据库
