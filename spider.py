@@ -34,12 +34,9 @@ def analyze_web(queue, visited, content, parent_url):
 def main():
     parse =  argparse.ArgumentParser(description="递归下载指定URL的网页")
     parse.add_argument("url", type=str, help="seed url")
-    parse.add_argument("-d", "--dest", help="where to store")
 
     args = parse.parse_args()
 
-    if args.dest:
-        webs_dir_store = args.dest
     seed_url = args.url
 
     queue = deque() # 存储待搜索的url
@@ -47,7 +44,7 @@ def main():
 
     visited = set() # 存储已经访问过的url
 
-    while queue and url_cnt<10000:
+    while queue and (url_cnt<10000) :
         url = queue.popleft()
         print(url)
         visited.add(url)

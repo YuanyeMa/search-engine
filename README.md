@@ -8,8 +8,69 @@
 
 ## 网络爬虫
 
-## 信息整理系统
+## 建立索引
+
+采用BeautifulSoup进行网页内容解析  
+采用sqlite3数据库存储词表 
+
+### Beautiful解析网页内容  
+
+### SQLite3数据库使用  
+1. 在ubuntu中安装sqlite3数据库
+```shell
+sudo apt install sqlite3 #安装sqlite3
+sudo apt install libsqlite3-dev #安装sqlite3开发工具库
+sudo apt install python-pysqlite2 # 安装python支持
+```
+
+2. sqlite3数据库简单使用
+sqlite2数据库以文件形式存在，使用`sqlite3 databasename`就能创建一个sqlite3数据库，删除此文件就是删除数据库。例如 `sqlite3 word.db` 就创建了一个word的数据库，并进入数据库命令行。sqlite3的命令都以`.`开头  
+常用的命令如下表  
+|命令|作用|
+|.database|查看数据库|
+|.table或者.tables tablename|查看数据表|
+|inser into tablename value('v1', v2)|向数据表中插入数据|
+|select * from tablename| 查看表中的所有记录|
+|drop tablename|删除数据表|
+|.schema tablename|查看数据包创建语句|
+|.exit| 退出数据库|
+
+更多用法请参考sqlite3手册 或者 [教程](https://blog.csdn.net/ALDRIDGE1/article/details/17025529) 
+此外sqlite3可以使用sqlitebrowser图形化访问数据库。
+
+
+
+3. 使用python访问sqlite3数据库
+
+```python3
+import sqlite3
+
+# 建立一个到数据库的链接
+conn = sqlite3.connect('./databases/test.db')
+# 获取一个操作句柄  
+c = conn.cursor()
+
+# 删除一张表
+c.execute('drop table student')
+
+# 创建一张表
+c.execute('create table student (name varchar(10), age int)')
+
+# 往表中插入一条数据
+c.execute('insert into student values(?, ?)', ("hello", 22))
+
+# 查询表中所有数据 
+c.execute('select * from student')
+
+result=c.fetchall()
+
+print(result)
+
+conn.close()
+```
+
 
 ## 查询系统
+
 
 
