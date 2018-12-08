@@ -9,15 +9,16 @@ import sqlite3
 import jieba
 
 url_cnt=0
+target_url_cnt=0
 
 def analyze_web(queue, visited, content, purl, database):
-    global url_cnt
+    global url_cnt, target_url_cnt
 
     # 解析网页内容，并建立索引
     soup = BeautifulSoup(content, 'lxml')
     if soup.title :
         title = soup.title.string
-        if title == '404':
+        if (title == '404') or (title == None):
             return 
         store_word(title, purl, database)
     else :
@@ -33,7 +34,7 @@ def analyze_web(queue, visited, content, purl, database):
         if not re.match(r'http', url):
             url = purl+url
         if (url not in queue) and (url not in visited) and (url[-1] != '/'):
-            if url_cnt>1000 :
+            if url_cnt>target_url_cnt :
                 continue
             queue.append(url)
             url_cnt=url_cnt+1
@@ -83,14 +84,17 @@ def create_database(databasename):
 
 
 def main():
-    global url_cnt
+    global url_cnt,  target_url_cnt
 
     parse =  argparse.ArgumentParser(description="递归下载指定URL的网页")
     parse.add_argument("url", type=str, help="seed url")
     parse.add_argument("words_database", type=str, help="database name to store words table")
+    parse.add_argument('-c', '--count', type=int, default=1000, help='number of webs to index')
 
     args = parse.parse_args()
     
+    target_url_cnt = args.count
+
     # 创建词表
     database = args.words_database
     create_database(database)
