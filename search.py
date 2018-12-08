@@ -1,4 +1,4 @@
-
+#-*- coding: UTF-8 -*-
 import math
 import argparse
 import sqlite3
@@ -18,18 +18,19 @@ def main():
     c = conn.cursor()
     c.execute('select count(1) from doc')
     N = 1+c.fetchall()[0][0] # 文档总数
+    print("文档总数:", N)
 
     target = args.key_word
 
     seggen = jieba.cut_for_search(target)
 
-    score = {}
+    score = {} # 存储每个网页的评分
 
     for word in seggen:
         print('得到查询词:', word)
 
         # 计算score
-        tf = {}
+        tf = {} # 词频
         c.execute('select list from word where term=?', (word,))
         result = c.fetchall()
 
@@ -39,13 +40,16 @@ def main():
 
             doclist = [int(x) for x in doclist]
 
-            df = len(set(doclist))
-            idf = math.log(N/df)
+            print(len(doclist))
+
+            df = len(set(doclist)) # 包含该词的文档数，去掉重复出现的文档
+
+            idf = math.log(N/df) # 逆文档频率 inverse document frequency
             print('idf : ', idf)
 
-            for num in doclist:
+            for num in doclist:  # num对应的是url的id ，此处统计的是同一个词在同一篇文章中出现的次数
                 if num in tf:
-                    tf[num] = tf[num+1]
+                    tf[num] = tf[num]+1
                 else :
                     tf[num] = 1
 
@@ -56,8 +60,9 @@ def main():
                     score[num] = score[num] + tf[num]*idf
                 else:
                     score[num] = tf[num]*idf
-
-    sortedlist = sorted(score.items(), key=lambda d:d[1], reverse=True)
+    
+    sortedlist = sorted(score.items(), key=lambda d:d[1], reverse=True) 
+    # score.items() 以列表的形式返回可遍历的(key,value) reverse = True 按照降序排列
 
     cnt = 0
     for num, docscore in sortedlist:

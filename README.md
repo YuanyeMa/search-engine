@@ -14,7 +14,7 @@
 import  requests
 r = requests.get('https://blog.csdn.net')
 r.text # 存储网页内容
-ｒ.encoding　#存储网页编码方式
+r.encoding　#存储网页编码方式
 ```
 
 ## 建立索引
@@ -98,5 +98,4 @@ conn.close()
 
 ## 查询系统
 
-
-
+网页排序算法使用了 [tf-idf算法](http://www.ruanyifeng.com/blog/2013/03/tf-idf.html)
