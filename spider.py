@@ -8,138 +8,176 @@ from bs4 import BeautifulSoup
 import sqlite3
 import jieba
 
-url_cnt=0
-target_url_cnt=0
 
-def analyze_web(queue, visited, content, purl, database):
-    global url_cnt
-    # 解析网页内容，并建立索引
-    soup = BeautifulSoup(content, 'lxml')
-    if soup.title :
-        title = soup.title.string
-        if (title == '404') or (title == '403') or (title == None):
-            return 
-        url_cnt += store_word(soup, purl, database)
-    else :
-        title = 'None'
+class spider():
+    def __init__(self, seed_url, target_url_count):
+        self.seed_url = seed_url
+        self.target_url_count = target_url_count
+        self.cur_url_count = 0
+        self.patten = re.compile(r'<a href=\"([0-9a-zA-Z\_\/\.\%\?\=\-\&\:]+)\"', re.I)
+        self.__queue__ = deque()
+        self.__visited__ = set()
+        self.__queue__.append(self.seed_url)
+        
+    def get_next_url(self):
+        if self.__queue__: 
+            url = self.__queue__.popleft()
+            self.__visited__.add(url)
+            return  url
+        else :
+            return None
 
-    print(str(url_cnt)+"\t"+purl+"\t\t\t\t"+title.strip().replace(" ", ""))
+    def get_context(self, url):
+        web = requests.get(url)
+        return web.text
 
-    # 提取出页面内所有的链接，并加入队列
-    pattern = re.compile(r'<a href=\"([0-9a-zA-Z\_\/\.\%\?\=\-\&\:]+)\"', re.I)
-    urls = pattern.findall(content)
+    def extract_text(self, context):
+        soup = BeautifulSoup(context, 'lxml')
+
+        if soup.title == None:
+            return  None, None
+        else:
+            title = soup.title.string
+            if (title == '404') or (title.find('403') != -1) or (title == None):
+                return  None, None
+         
+        # 分析网页提取文本
+        text_article="" 
+        text_title = soup.title.string.strip()
+
+        # 提取文字
+        article = soup.find_all('article')
+
+        len_article = len(article)
+        if len_article < 1:
+            text_article = 'None' # 空白文档
+        else:
+            for index in article :
+                tag_p = index.find_all('p')
+                for text in tag_p :
+                    text_article += text.text.strip()
+            text_article.replace(" ", "")
     
-    for url in urls:
-        if not re.match(r'http', url):
-            url = purl+url
-        if (url not in queue) and (url not in visited) and (url[-1] != '/'):
-            queue.append(url)
+        return text_title, text_article
 
 
-def store_word(soup, url, database):
-    text_article=soup.title.string.strip()
+    def extract_url(self, context, purl):
+        soup = BeautifulSoup(context, 'lxml')
+        if soup.title :
+            title = soup.title.string
+            if (title == '404') or (title.find('403') != -1) or (title == None):
+                return -1
+            else:
+                # 提取可用的url
+                urls = self.patten.findall(context)
+                for url in urls:
+                    if not re.match(r'http', url):
+                        url = purl+url
+                    if (url not in self.__queue__) and (url not in self.__visited__) and (url[-1] != '/'):
+                        self.__queue__.append(url)
 
-    # 提取文字
-    article = soup.find_all('article')
-
-    len_article = len(article)
-    if len_article < 1:
-        return 0 # 空白文档
-    else:
-        for index in article :
-            tag_p = index.find_all('p')
-            for text in tag_p :
-                text_article += text.text.strip()
-        #print(text_article)
+                return len(urls)
+        else:
+            return -1
     
-    text_article.replace(" ", "")
-    # 分词
-    seggen = jieba.cut_for_search(text_article)
-    seglist = list(seggen)
 
-    # 存进数据库
-    conn = sqlite3.connect(database)
-    c = conn.cursor()
+    def store_word(self, db, title, text, url):
+        url_index = db.store_url(url, title)
 
-    c.execute('insert into doc (link)values(?)', (url,))
+        if text != 'None' :
+            seggen = jieba.cut_for_search(title+text)
+            seglist = list(seggen)
+            for word in seglist:
+                db.store_word(word, url_index)
+            db.commit()
 
-    cnt = c.execute('select count(1) from doc') # 获取当前数据库中有多少条数据
-    cnt = cnt.fetchall()[0][0]
 
-    for word in seglist:
-        c.execute('select list from word where term=?', (word,))
-        result = c.fetchall()
+    def run(self, db):
+        while self.cur_url_count < self.target_url_count:
+            url = self.get_next_url()
+            if url:
+                context = self.get_context(url)
+                self.extract_url(context, url)
+                title, text = self.extract_text(context)
+                if title:
+                    self.store_word(db, title, text, url)
+                    self.cur_url_count+=1
+                    print(str(self.cur_url_count)+"\t"+url+"\t\t"+title)
+            else:
+                break
+
+
+    def __test__(self):
+        #if()
+        pass
+
+
+class db():
+    def __init__(self, db_name):
+        self.name = db_name
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+
+    def create_tables(self):
+        try :
+            print("删除旧的表文件")
+            self.cursor.execute('drop table doc')
+            self.cursor.execute('drop table word')
+        except :
+            print('数据库不存在，现在创建')
+
+        print("创建新表")
+        self.cursor.execute('create table doc (id integer primary key autoincrement, title text, link text)')
+        self.cursor.execute('create table word (term varchar(25) primary key, list text)')
+
+    def store_url(self, title, url):
+        self.cursor.execute('insert into doc (title, link)values(?,?)', (title, url))
+        cnt = self.cursor.execute('select count(1) from doc') # 获取当前数据库中有多少条数据
+        self.conn.commit()
+        return cnt.fetchall()[0][0]
+ 
+    def store_word(self, word, url_index):
+        self.cursor.execute('select list from word where term=?', (word,))
+        result = self.cursor.fetchall()
         if len(result) == 0:
-            docliststr = str(cnt)
-            c.execute('insert into word values(?,?)', (word, docliststr))
+            docliststr = str(url_index)
+            self.cursor.execute('insert into word values(?,?)', (word, docliststr))
         else:
             docliststr = result[0][0]
-            docliststr +=' '+str(cnt)
-            c.execute('update word set list=? where term=?', (docliststr, word))
+            docliststr +=' '+str(url_index)
+            self.cursor.execute('update word set list=? where term=?', (docliststr, word))
 
-    conn.commit()
-    conn.close()
+    def commit(self):
+        self.conn.commit()
 
-    return 1
+    def close(self):
+        self.conn.close()
 
-def create_database(databasename):
-    conn = sqlite3.connect(databasename)
-    c = conn.cursor()
 
-    try :
-        c.execute('drop table doc')
-        c.execute('drop table word')
-    except :
-        print('数据库不存在，现在创建')
-    c.execute('create table doc (id integer primary key autoincrement, link text)')
-    c.execute('create table word (term varchar(25) primary key, list text)')
 
-    conn.commit()
-    conn.close()
+
 
 
 
 def main():
-    global url_cnt,  target_url_cnt
-
     parse =  argparse.ArgumentParser(description="递归下载指定URL的网页")
     parse.add_argument("url", type=str, help="seed url")
     parse.add_argument("words_database", type=str, help="database name to store words table")
     parse.add_argument('-c', '--count', type=int, default=1000, help='number of webs to index')
-
     args = parse.parse_args()
-    
-    target_url_cnt = args.count
 
-    # 创建词表
+
+    target_url_cnt = args.count
     database = args.words_database
-    create_database(database)
-    
-    # 爬取网页
     seed_url = args.url
 
-    queue = deque() # 存储待搜索的url
-    queue.append(seed_url)
+    word_db = db(database)
+    word_db.create_tables()
 
-    visited = set() # 存储已经访问过的url
+    sp = spider(seed_url, target_url_cnt)
 
-    while queue :
-        if url_cnt > target_url_cnt:
-            break
+    sp.run(word_db)
 
-        url = queue.popleft()
-        visited.add(url)
-
-        try:
-            res = requests.get(url)
-        except:
-            print("open url failed!")
-            continue
-        
-        analyze_web(queue, visited, res.text, url, database)
-
-    print("共找到%s个url"% (url_cnt))
-       
 
 
 
