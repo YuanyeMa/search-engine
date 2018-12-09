@@ -12,19 +12,18 @@ url_cnt=0
 target_url_cnt=0
 
 def analyze_web(queue, visited, content, purl, database):
-    global url_cnt, target_url_cnt
-
+    global url_cnt
     # 解析网页内容，并建立索引
     soup = BeautifulSoup(content, 'lxml')
     if soup.title :
         title = soup.title.string
-        if (title == '404') or (title == None):
+        if (title == '404') or (title == '403') or (title == None):
             return 
-        store_word(title, purl, database)
+        url_cnt += store_word(soup, purl, database)
     else :
         title = 'None'
 
-    print(purl+"\t\t\t\t"+title)
+    print(str(url_cnt)+"\t"+purl+"\t\t\t\t"+title.strip().replace(" ", ""))
 
     # 提取出页面内所有的链接，并加入队列
     pattern = re.compile(r'<a href=\"([0-9a-zA-Z\_\/\.\%\?\=\-\&\:]+)\"', re.I)
@@ -34,23 +33,38 @@ def analyze_web(queue, visited, content, purl, database):
         if not re.match(r'http', url):
             url = purl+url
         if (url not in queue) and (url not in visited) and (url[-1] != '/'):
-            if url_cnt>target_url_cnt :
-                continue
             queue.append(url)
-            url_cnt=url_cnt+1
-            #print(url)
 
 
-def store_word(text, url, database):
-    seggen = jieba.cut_for_search(text)
+def store_word(soup, url, database):
+    text_article=soup.title.string.strip()
+
+    # 提取文字
+    article = soup.find_all('article')
+
+    len_article = len(article)
+    if len_article < 1:
+        return 0 # 空白文档
+    else:
+        for index in article :
+            tag_p = index.find_all('p')
+            for text in tag_p :
+                text_article += text.text.strip()
+        #print(text_article)
+    
+    text_article.replace(" ", "")
+    # 分词
+    seggen = jieba.cut_for_search(text_article)
     seglist = list(seggen)
 
+    # 存进数据库
     conn = sqlite3.connect(database)
     c = conn.cursor()
+
     c.execute('insert into doc (link)values(?)', (url,))
 
     cnt = c.execute('select count(1) from doc') # 获取当前数据库中有多少条数据
-    cnt = str(cnt.fetchall()[0][0])
+    cnt = cnt.fetchall()[0][0]
 
     for word in seglist:
         c.execute('select list from word where term=?', (word,))
@@ -65,6 +79,8 @@ def store_word(text, url, database):
 
     conn.commit()
     conn.close()
+
+    return 1
 
 def create_database(databasename):
     conn = sqlite3.connect(databasename)
@@ -108,6 +124,8 @@ def main():
     visited = set() # 存储已经访问过的url
 
     while queue :
+        if url_cnt > target_url_cnt:
+            break
 
         url = queue.popleft()
         visited.add(url)
