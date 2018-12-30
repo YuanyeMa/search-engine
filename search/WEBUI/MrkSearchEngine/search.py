@@ -1,11 +1,10 @@
-#-*- coding: UTF-8 -*-
+"""
+搜索引擎后端计算模块
+"""
 import math
 import argparse
-import sqlite3
 import jieba
-from bs4 import BeautifulSoup
-import requests
-from db import DB
+from MrkSearchEngine.db import DB
 
 
 class Search():
@@ -69,6 +68,7 @@ class Search():
         sortedlist = sorted(score.items(), key=lambda d:d[1], reverse=True) 
         # score.items() 以列表的形式返回可遍历的(key,value) reverse = True 按照降序排列
         return sortedlist
+
 
 
 
