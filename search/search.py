@@ -74,8 +74,8 @@ class Search():
 def run(keyword):
     """ 给外部函数调用的 """
     import os
-    db_name = os.path.abspath(os.path.join(os.getcwd(), "../../database/word.db"))
-    # print(db_name)
+    db_name = os.path.abspath(os.path.join(os.getcwd(), "database/word.db"))
+    print(db_name)
     target = keyword
 
     seggen = jieba.cut_for_search(target)

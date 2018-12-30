@@ -2,6 +2,21 @@
 信息检索与文本挖掘大作业1----搜索引擎  
 [参考此blog](https://blog.csdn.net/ryinlovec/article/details/53547233)
 
+## 用法  
+### 安装环境  
+`pip install -r ./requirements.txt`
+### 启动爬虫
+`python3 -m spider url word_database`
+> 其中
+> url	为要爬取的网站，例如 https://blog.csdn.net
+> word_database		为保存词表数据库路径，例如 : ./database/word.db
+
+### 启动搜索服务
+`python3 -m search`
+之后用浏览器打开`http://localhost:5555`在搜索框中输入需要搜索的关键字  
+
+
+
 ## 搜索引擎的组成
 搜索引擎主要由三部分组成：网络爬虫，信息整理，查询系统  
 其中，网络爬虫主要负责从Internet上搜索下载网页；信息整理系统负责，解析网页，提取URL并将存储解析结果，建立索引；查询系统重要完成解析用户提交的查询请求，并从信息库中搜索相关相信，并将搜索到的网页排序，最终返回给用户。
