@@ -7,14 +7,21 @@
 `pip install -r ./requirements.txt`
 ### 启动爬虫
 `python3 -m spider url word_database`
-> 其中
-> url	为要爬取的网站，例如 https://blog.csdn.net
-> word_database		为保存词表数据库路径，例如 : ./database/word.db
+> 其中  
+> url	为要爬取的网站，例如 https://blog.csdn.net  
+> word_database		为保存词表数据库路径，例如 : ./database/word.db  
+
+![spider运行效果](./爬虫运行效果展示.png)
 
 ### 启动搜索服务
 `python3 -m search`
-之后用浏览器打开`http://localhost:5555`在搜索框中输入需要搜索的关键字  
+之后用浏览器打开`http://localhost:5555`在搜索框中输入需要搜索的关键字    
 
+![启动search服务效果](./search运行效果.png)  
+
+![web页面效果](./web页面展示.png)  
+
+![搜索结果展示](./搜索结果展示.png)  
 
 
 ## 搜索引擎的组成
@@ -113,4 +120,4 @@ conn.close()
 
 ## 查询系统
 
-网页排序算法使用了 [tf-idf算法](http://www.ruanyifeng.com/blog/2013/03/tf-idf.html)
+网页排序算法使用了 [tf-idf算法](http://www.ruanyifeng.com/blog/2013/03/tf-idf.html)  

@@ -1,6 +1,6 @@
 """
 搜索引擎核心代码
-作者：马哥
+作者：马原野
 """
 import math
 import argparse
